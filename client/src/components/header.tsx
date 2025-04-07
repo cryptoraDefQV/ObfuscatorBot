@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Code, Menu, HelpCircle } from "lucide-react";
+import { Shield, Menu, HelpCircle } from "lucide-react";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -17,10 +17,13 @@ export default function Header({ onMenuToggle }: HeaderProps) {
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center mr-3">
-          <Code className="h-4 w-4 text-white" />
+        <div className="relative h-8 w-8 mr-3">
+          <img src="/logo.png" alt="OBFUSCORE Logo" className="h-full w-full object-contain" />
         </div>
-        <h1 className="text-xl font-bold">Lua Obfuscator Bot</h1>
+        <h1 className="text-xl font-bold">
+          <span className="bg-gradient-to-r from-blue-400 to-white bg-clip-text text-transparent">OBFUS</span>
+          <span className="text-white">CORE</span>
+        </h1>
       </div>
       <div className="flex items-center space-x-4">
         <a 
@@ -28,7 +31,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <Button className="bg-indigo-500 hover:bg-indigo-600 text-white py-1 px-4 rounded-md text-sm transition-colors">
+          <Button className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-4 rounded-md text-sm transition-colors">
             Add to Server
           </Button>
         </a>

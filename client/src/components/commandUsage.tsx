@@ -1,20 +1,20 @@
 import { Card } from "@/components/ui/card";
-import { Shield, FileText, BookOpen, Check, HelpCircle, Cog, AlertTriangle } from "lucide-react";
+import { Shield, FileText, BookOpen, Check, HelpCircle, Cog, AlertTriangle, FileCode, Lock } from "lucide-react";
 
 export default function CommandUsage() {
   return (
     <div className="bg-gray-800 rounded-lg p-4 mb-6">
-      <h2 className="font-semibold text-lg mb-3">How to use the Obfuscator</h2>
+      <h2 className="section-header font-semibold text-xl mb-4">How to use OBFUSCORE</h2>
       <p className="text-gray-300 mb-4">
-        Obfuscate your Lua code by using the <code className="bg-gray-700 px-1 rounded">!obfuscate</code> command and attaching your Lua file.
+        Protect your Lua code by using the <code className="bg-gray-700 px-1 rounded">!obfuscate</code> command and attaching your Lua file.
       </p>
       
       {/* Step by step instructions */}
       <div className="bg-gray-900 rounded p-4 border border-gray-700 mb-6">
-        <h3 className="font-semibold mb-3 text-amber-400">Simple 3-step process:</h3>
+        <h3 className="font-semibold mb-3 text-blue-400">Simple 3-step process:</h3>
         <div className="space-y-3">
           <div className="flex items-start">
-            <div className="bg-amber-600 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+            <div className="bg-blue-600 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
               <span className="text-white font-bold">1</span>
             </div>
             <div>
@@ -24,7 +24,7 @@ export default function CommandUsage() {
           </div>
           
           <div className="flex items-start">
-            <div className="bg-amber-600 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+            <div className="bg-blue-600 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
               <span className="text-white font-bold">2</span>
             </div>
             <div>
@@ -34,12 +34,12 @@ export default function CommandUsage() {
           </div>
           
           <div className="flex items-start">
-            <div className="bg-amber-600 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+            <div className="bg-blue-600 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
               <span className="text-white font-bold">3</span>
             </div>
             <div>
               <p className="text-gray-200 font-medium">Get obfuscated code via DM</p>
-              <p className="text-gray-400 text-sm">The bot will privately send you the obfuscated file</p>
+              <p className="text-gray-400 text-sm">OBFUSCORE will privately send you the obfuscated file</p>
             </div>
           </div>
         </div>
@@ -47,25 +47,30 @@ export default function CommandUsage() {
       
       {/* Discord-style embeds */}
       <div className="mb-6">
-        <h3 className="font-semibold mb-3">Bot Responses:</h3>
+        <h3 className="section-header font-semibold mb-3">Bot Responses:</h3>
         <div className="space-y-3">
           {/* Processing embed */}
-          <div className="border-l-4 border-amber-500 rounded-r-md bg-gray-700 p-3">
+          <div className="discord-embed p-3">
             <div className="flex items-center mb-1">
-              <Cog className="h-5 w-5 mr-2 text-amber-400" />
+              <Cog className="h-5 w-5 mr-2 text-blue-400 animate-spin" />
               <span className="font-semibold text-white">Processing Lua File</span>
             </div>
             <p className="text-gray-300 text-sm mb-1">
               I'm working on obfuscating your file with <strong>heavy</strong> protection.
             </p>
-            <div className="flex text-xs text-gray-400 mt-2 justify-between">
-              <span>LUA Obfuscator Bot</span>
+            <div className="flex text-xs text-gray-400 mt-2 justify-between items-center">
+              <div className="flex items-center">
+                <div className="w-4 h-4 mr-1">
+                  <img src="/logo.png" alt="OBFUSCORE Logo" className="w-full h-full object-contain" />
+                </div>
+                <span>OBFUSCORE</span>
+              </div>
               <span>{new Date().toLocaleTimeString()}</span>
             </div>
           </div>
           
           {/* Success embed */}
-          <div className="border-l-4 border-green-500 rounded-r-md bg-gray-700 p-3">
+          <div className="discord-embed border-green-500 p-3">
             <div className="flex items-center mb-1">
               <Check className="h-5 w-5 mr-2 text-green-400" />
               <span className="font-semibold text-white">DM Sent Successfully</span>
@@ -73,14 +78,19 @@ export default function CommandUsage() {
             <p className="text-gray-300 text-sm mb-1">
               I've sent you a DM with the obfuscated code!
             </p>
-            <div className="flex text-xs text-gray-400 mt-2 justify-between">
-              <span>LUA Obfuscator Bot</span>
+            <div className="flex text-xs text-gray-400 mt-2 justify-between items-center">
+              <div className="flex items-center">
+                <div className="w-4 h-4 mr-1">
+                  <img src="/logo.png" alt="OBFUSCORE Logo" className="w-full h-full object-contain" />
+                </div>
+                <span>OBFUSCORE</span>
+              </div>
               <span>{new Date().toLocaleTimeString()}</span>
             </div>
           </div>
           
           {/* Error embed example */}
-          <div className="border-l-4 border-red-500 rounded-r-md bg-gray-700 p-3">
+          <div className="discord-embed border-red-500 p-3">
             <div className="flex items-center mb-1">
               <AlertTriangle className="h-5 w-5 mr-2 text-red-400" />
               <span className="font-semibold text-white">Invalid File Type</span>
@@ -88,8 +98,13 @@ export default function CommandUsage() {
             <p className="text-gray-300 text-sm mb-1">
               No valid Lua files found. Please attach a file with the <code className="bg-gray-800 px-1 rounded">.lua</code> extension.
             </p>
-            <div className="flex text-xs text-gray-400 mt-2 justify-between">
-              <span>LUA Obfuscator Bot</span>
+            <div className="flex text-xs text-gray-400 mt-2 justify-between items-center">
+              <div className="flex items-center">
+                <div className="w-4 h-4 mr-1">
+                  <img src="/logo.png" alt="OBFUSCORE Logo" className="w-full h-full object-contain" />
+                </div>
+                <span>OBFUSCORE</span>
+              </div>
               <span>{new Date().toLocaleTimeString()}</span>
             </div>
           </div>
@@ -97,12 +112,12 @@ export default function CommandUsage() {
       </div>
       
       {/* Protection levels */}
-      <h3 className="font-semibold mb-3">Protection Levels:</h3>
+      <h3 className="section-header font-semibold mb-3">Protection Levels:</h3>
       <div className="grid md:grid-cols-3 gap-3 mb-4">
-        <div className="bg-gray-900 rounded-lg p-3 border border-green-800">
+        <div className="bg-gray-900 rounded-lg p-3 border border-blue-800 hover:border-blue-600 transition-colors">
           <div className="flex items-center mb-2">
-            <Shield className="h-5 w-5 mr-2 text-green-500" />
-            <h4 className="font-medium text-green-400">Light</h4>
+            <FileCode className="h-5 w-5 mr-2 text-blue-500" />
+            <h4 className="font-medium text-blue-400">Light</h4>
           </div>
           <div className="space-y-2">
             <p className="text-gray-300 text-sm">Basic obfuscation:</p>
@@ -117,10 +132,10 @@ export default function CommandUsage() {
           </div>
         </div>
         
-        <div className="bg-gray-900 rounded-lg p-3 border border-amber-800">
+        <div className="bg-gray-900 rounded-lg p-3 border border-blue-800 hover:border-blue-600 transition-colors">
           <div className="flex items-center mb-2">
-            <Shield className="h-5 w-5 mr-2 text-amber-500" />
-            <h4 className="font-medium text-amber-400">Medium (Default)</h4>
+            <Shield className="h-5 w-5 mr-2 text-blue-500" />
+            <h4 className="font-medium text-blue-400">Medium (Default)</h4>
           </div>
           <div className="space-y-2">
             <p className="text-gray-300 text-sm">Standard protection:</p>
@@ -135,10 +150,10 @@ export default function CommandUsage() {
           </div>
         </div>
         
-        <div className="bg-gray-900 rounded-lg p-3 border border-red-800">
+        <div className="bg-gray-900 rounded-lg p-3 border border-blue-800 hover:border-blue-600 transition-colors">
           <div className="flex items-center mb-2">
-            <Shield className="h-5 w-5 mr-2 text-red-500" />
-            <h4 className="font-medium text-red-400">Heavy</h4>
+            <Lock className="h-5 w-5 mr-2 text-blue-500" />
+            <h4 className="font-medium text-blue-400">Heavy</h4>
           </div>
           <div className="space-y-2">
             <p className="text-gray-300 text-sm">Maximum protection:</p>
@@ -155,7 +170,7 @@ export default function CommandUsage() {
       </div>
       
       <div className="mt-4 p-3 bg-gray-900 rounded-lg border border-gray-700 flex items-start">
-        <HelpCircle className="h-5 w-5 mr-2 text-amber-400 flex-shrink-0 mt-0.5" />
+        <HelpCircle className="h-5 w-5 mr-2 text-blue-400 flex-shrink-0 mt-0.5" />
         <div>
           <p className="text-gray-200 font-medium">Need help?</p>
           <p className="text-gray-400 text-sm">
