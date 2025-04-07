@@ -25,13 +25,13 @@ export default function DmExample() {
             <span className="text-gray-400 text-xs ml-2">Today at 12:34 PM</span>
           </div>
           <div className="mt-1 text-gray-300">
-            <p className="mb-2">
-              Here's your Lua code obfuscated with 
+            <div className="mb-2 flex items-center">
+              <span>Here's your Lua code obfuscated with</span>
               <Badge className="ml-2 bg-red-500/20 text-red-400 border border-red-600 hover:bg-red-500/30">
                 <Shield className="h-3 w-3 mr-1 text-red-400" />
                 Heavy Protection
               </Badge>
-            </p>
+            </div>
             <div className="bg-[#282C34] rounded-md p-3 max-h-80 overflow-y-auto">
               <pre>
                 <code className="text-sm text-gray-200 font-mono whitespace-pre-wrap break-words">
