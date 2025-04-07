@@ -11,31 +11,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API endpoint for obfuscating Lua code from the web interface
   app.post("/api/obfuscate", async (req, res) => {
     try {
+      // Validate input using Zod schema
       const { code, level } = obfuscateRequestSchema.parse(req.body);
+      
+      // Validate that code is not empty
+      if (!code || !code.trim()) {
+        return res.status(400).json({ 
+          message: "Code cannot be empty",
+          success: false
+        });
+      }
       
       try {
         // Use the specified level or default to Medium if not provided
-        const obfuscatedCode = obfuscateLua(code, level);
+        const selectedLevel = level || ObfuscationLevel.Medium;
+        console.log(`Obfuscating code with level: ${selectedLevel}`);
         
+        // Perform the actual obfuscation
+        const obfuscatedCode = obfuscateLua(code, selectedLevel);
+        
+        // Return successful response
         res.json({ 
           obfuscatedCode,
-          level: level || ObfuscationLevel.Medium
+          level: selectedLevel,
+          success: true
         });
       } catch (error) {
         console.error("Error obfuscating code:", error);
         res.status(500).json({ 
           message: "Failed to obfuscate code", 
-          error: error instanceof Error ? error.message : "Unknown error" 
+          error: error instanceof Error ? error.message : "Unknown error",
+          success: false
         });
       }
     } catch (error) {
       if (error instanceof ZodError) {
+        // Handle validation errors from Zod
         const validationError = fromZodError(error);
-        res.status(400).json({ message: validationError.message });
+        res.status(400).json({ 
+          message: validationError.message,
+          success: false 
+        });
       } else {
+        // Handle other types of errors
         res.status(400).json({ 
           message: "Invalid request", 
-          error: error instanceof Error ? error.message : "Unknown error"
+          error: error instanceof Error ? error.message : "Unknown error",
+          success: false
         });
       }
     }

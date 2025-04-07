@@ -5,6 +5,9 @@
  * - Light: Comment removal and minification
  * - Medium (Default): Light + Variable name obfuscation
  * - Heavy: Medium + String encryption + Control flow obfuscation
+ * 
+ * Safety measures are implemented to handle issues with invalid code and
+ * ensure the obfuscator doesn't crash on unexpected inputs.
  */
 
 import { ObfuscationLevelType, ObfuscationLevel } from "@shared/schema";

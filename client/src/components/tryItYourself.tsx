@@ -31,7 +31,7 @@ export default function TryItYourself() {
       return res.json();
     },
     onSuccess: (data) => {
-      if (data.obfuscatedCode) {
+      if (data.success && data.obfuscatedCode) {
         // Create a blob and download link
         const blob = new Blob([data.obfuscatedCode], { type: "text/plain" });
         const url = URL.createObjectURL(blob);
@@ -48,6 +48,12 @@ export default function TryItYourself() {
         toast({
           title: "Obfuscation complete",
           description: `Your code has been obfuscated with ${data.level} protection.`,
+        });
+      } else if (!data.success) {
+        toast({
+          title: "Obfuscation failed",
+          description: data.message || "Failed to obfuscate code",
+          variant: "destructive",
         });
       }
     },
