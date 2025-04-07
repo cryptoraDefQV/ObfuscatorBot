@@ -1,33 +1,42 @@
 /**
  * LUA OBFUSCATOR
  * 
- * Implements a simple Lua code obfuscator with the following features:
- * - Variable name obfuscation
- * - String encoding
- * - Code minification
- * - Comment removal
+ * Implements a Lua code obfuscator with multiple levels of protection:
+ * - Light: Comment removal and minification
+ * - Medium (Default): Light + Variable name obfuscation
+ * - Heavy: Medium + String encryption + Control flow obfuscation
  */
 
-// Function to obfuscate Lua code
-export function obfuscateLua(luaCode: string): string {
+import { ObfuscationLevelType, ObfuscationLevel } from "@shared/schema";
+
+// Main obfuscation function with level selection
+export function obfuscateLua(luaCode: string, level: ObfuscationLevelType = ObfuscationLevel.Medium): string {
   try {
-    // Step 1: Remove comments
-    const noComments = removeComments(luaCode);
+    console.log(`Obfuscating Lua code with level: ${level}`);
+    
+    // Step 1: Always remove comments (all levels)
+    let result = removeComments(luaCode);
+    
+    if (level === ObfuscationLevel.Light) {
+      // For light obfuscation, just minify after removing comments
+      return minifyCode(result);
+    }
     
     // Step 2: Extract and replace strings
-    const { code: extractedCode, strings } = extractStrings(noComments);
+    const { code: extractedCode, strings } = extractStrings(result);
     
-    // Step 3: Rename variables and functions
+    // Step 3: Rename variables and functions (Medium and Heavy)
     const { obfuscatedCode, variableMap } = obfuscateVariables(extractedCode);
     
-    // Step 4: Restore strings with encoded versions
-    const codeWithStrings = restoreStrings(obfuscatedCode, strings);
+    // Step 4: Restore strings (potentially with encoding for Heavy)
+    const shouldEncodeStrings = level === ObfuscationLevel.Heavy;
+    const codeWithStrings = restoreStrings(obfuscatedCode, strings, shouldEncodeStrings);
     
-    // Step 5: Minify the code (remove unnecessary whitespace)
+    // Step 5: Minify the code (all levels)
     const minifiedCode = minifyCode(codeWithStrings);
     
-    // Add obfuscation wrapper (makes the code harder to reverse)
-    return addObfuscationWrapper(minifiedCode);
+    // Step 6: Add obfuscation wrapper (Medium and Heavy)
+    return addObfuscationWrapper(minifiedCode, level);
   } catch (error) {
     console.error("Obfuscation error:", error);
     throw new Error(`Failed to obfuscate Lua code: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -97,7 +106,7 @@ function obfuscateVariables(code: string): { obfuscatedCode: string, variableMap
   
   // Replace function parameters (simplified, not handling all cases)
   obfuscatedCode = obfuscatedCode.replace(paramPattern, (match, prefix, params, suffix) => {
-    const paramList = params.split(",").map(param => {
+    const paramList = params.split(",").map((param: string) => {
       const trimmedParam = param.trim();
       if (trimmedParam.startsWith("_") || reservedWords.includes(trimmedParam)) {
         return trimmedParam;
@@ -109,10 +118,10 @@ function obfuscateVariables(code: string): { obfuscatedCode: string, variableMap
   });
   
   // Replace variable usages (simplified approach)
-  for (const [original, obfuscated] of variableMap.entries()) {
+  Array.from(variableMap.entries()).forEach(([original, obfuscated]) => {
     const pattern = new RegExp(`\\b${original}\\b`, "g");
     obfuscatedCode = obfuscatedCode.replace(pattern, obfuscated);
-  }
+  });
   
   return { obfuscatedCode, variableMap };
 }
@@ -131,13 +140,15 @@ function generateVarName(index: number): string {
 }
 
 // Restore string literals with encoded versions
-function restoreStrings(code: string, strings: string[]): string {
+function restoreStrings(code: string, strings: string[], encodeStrings: boolean = false): string {
   let result = code;
   
   for (let i = 0; i < strings.length; i++) {
     const placeholder = `__STR_${i}__`;
-    // Optionally encode the string for additional obfuscation
-    const encodedString = encodeString(strings[i]);
+    const string = strings[i];
+    
+    // Apply string encoding for heavy obfuscation level
+    const encodedString = encodeStrings ? encodeString(string) : string;
     result = result.replace(placeholder, encodedString);
   }
   
@@ -146,8 +157,34 @@ function restoreStrings(code: string, strings: string[]): string {
 
 // Encode a string using a simple encoding technique
 function encodeString(str: string): string {
-  // Keep string encoding simple for now
-  return str;
+  // For heavy obfuscation, we convert strings to char codes
+  // Example: "hello" becomes 'string.char(104,101,108,108,111)'
+  if (str.length > 2) {
+    const content = str.substring(1, str.length - 1);
+    const quote = str[0];
+    
+    // Convert each character to its ASCII code
+    const charCodes = [];
+    for (let i = 0; i < content.length; i++) {
+      const char = content[i];
+      // Handle escape sequences properly
+      if (char === '\\' && i + 1 < content.length) {
+        i++;
+        if (content[i] === 'n') charCodes.push(10);
+        else if (content[i] === 't') charCodes.push(9);
+        else if (content[i] === 'r') charCodes.push(13);
+        else if (content[i] === quote) charCodes.push(quote.charCodeAt(0));
+        else charCodes.push(content[i].charCodeAt(0));
+      } else {
+        charCodes.push(char.charCodeAt(0));
+      }
+    }
+    
+    // Return function that builds the string from char codes
+    return `(function() return string.char(${charCodes.join(',')}) end)()`;
+  }
+  
+  return str; // Return as-is for very short strings
 }
 
 // Minify code by removing unnecessary whitespace
@@ -167,17 +204,38 @@ function minifyCode(code: string): string {
 }
 
 // Add an obfuscation wrapper to make code harder to reverse
-function addObfuscationWrapper(code: string): string {
-  // Simple wrapper that doesn't change the functionality but makes the code look more complex
-  return `
+function addObfuscationWrapper(code: string, level: ObfuscationLevelType = ObfuscationLevel.Medium): string {
+  // Base wrapper for all levels
+  let wrapper = `
 -- Obfuscated with LuaObfuscatorBot
+`;
+
+  // Add more complex wrappers based on obfuscation level
+  if (level === ObfuscationLevel.Heavy) {
+    wrapper += `
 local a=string.byte;local b=string.char;local c=string.sub;
 local d=table.concat;local e=table.insert;local f=math.ldexp;
 local g=getfenv or function()return _ENV end;local h=setmetatable;
 local i=select;local j=unpack or table.unpack;local k=tonumber;
-
-${code}
-  `.trim();
+local function l(m,n)local o={};for p=1,#m do o[p]=b(a(c(m,p,p))+n)end;return d(o)end;
+`;
+    
+    // For heavy obfuscation, we can also add some dummy functions and variables
+    wrapper += `
+local x,y,z=2305,823,function(A)return A end;
+local B,C,D=true,false,0;
+while B do if D>20 then B=C;break;end;D=D+1;end;
+`;
+  } else if (level === ObfuscationLevel.Medium) {
+    wrapper += `
+local a=string.byte;local b=string.char;local c=string.sub;
+local d=table.concat;local e=table.insert;local f=math.ldexp;
+local g=getfenv or function()return _ENV end;local h=setmetatable;
+local i=select;local j=unpack or table.unpack;local k=tonumber;
+`;
+  }
+  
+  return (wrapper + "\n" + code).trim();
 }
 
 // Lua reserved words to avoid replacing

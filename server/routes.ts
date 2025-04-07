@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
-import { obfuscateRequestSchema } from "@shared/schema";
+import { obfuscateRequestSchema, ObfuscationLevel } from "@shared/schema";
 import { startBot } from "./bot";
 import { obfuscateLua } from "./obfuscator";
 
@@ -11,11 +11,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API endpoint for obfuscating Lua code from the web interface
   app.post("/api/obfuscate", async (req, res) => {
     try {
-      const { code } = obfuscateRequestSchema.parse(req.body);
+      const { code, level } = obfuscateRequestSchema.parse(req.body);
       
       try {
-        const obfuscatedCode = obfuscateLua(code);
-        res.json({ obfuscatedCode });
+        // Use the specified level or default to Medium if not provided
+        const obfuscatedCode = obfuscateLua(code, level);
+        
+        res.json({ 
+          obfuscatedCode,
+          level: level || ObfuscationLevel.Medium
+        });
       } catch (error) {
         console.error("Error obfuscating code:", error);
         res.status(500).json({ 
