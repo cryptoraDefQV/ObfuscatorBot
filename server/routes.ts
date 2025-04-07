@@ -66,12 +66,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API endpoint to get statistics about bot usage
   app.get("/api/stats", async (req, res) => {
     try {
-      // In a real app, you would get this data from a database
-      res.json({
-        totalObfuscations: 0,
-        activeUsers: 0,
-        serverCount: 0
-      });
+      // In a production app, this would be real data from a database
+      // For now, providing rich simulated data for the dashboard
+      const statsData = {
+        data: {
+          totalObfuscations: 12547,
+          todayObfuscations: 423,
+          uniqueUsers: 1824,
+          averageFileSize: 28.4, // KB
+          processingTime: {
+            light: 0.8, // seconds
+            medium: 1.4,
+            heavy: 2.2
+          },
+          protectionLevels: [
+            { name: 'Light', value: 2341, color: '#60a5fa' },
+            { name: 'Medium', value: 7890, color: '#3b82f6' },
+            { name: 'Heavy', value: 2316, color: '#1d4ed8' }
+          ],
+          dailyStats: [
+            { day: 'Mon', obfuscations: 346 },
+            { day: 'Tue', obfuscations: 412 },
+            { day: 'Wed', obfuscations: 387 },
+            { day: 'Thu', obfuscations: 423 },
+            { day: 'Fri', obfuscations: 518 },
+            { day: 'Sat', obfuscations: 294 },
+            { day: 'Sun', obfuscations: 279 }
+          ],
+          popularFileTypes: [
+            { name: 'FiveM Scripts', value: 48 },
+            { name: 'Game Scripts', value: 32 },
+            { name: 'UI/Frontend', value: 12 },
+            { name: 'Other', value: 8 }
+          ],
+          lastUpdated: new Date().toLocaleString()
+        }
+      };
+
+      res.json(statsData);
     } catch (error) {
       res.status(500).json({ 
         message: "Failed to fetch stats", 
