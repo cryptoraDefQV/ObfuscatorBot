@@ -1,20 +1,33 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Code, FileUp, Loader2 } from "lucide-react";
+import { Code, FileUp, Loader2, Shield } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { obfuscateCode } from "@/lib/obfuscate";
+import { ObfuscationLevel } from "@/lib/obfuscate";
+import { 
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue 
+} from "@/components/ui/select";
 
 export default function TryItYourself() {
   const [code, setCode] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [obfuscationLevel, setObfuscationLevel] = useState<ObfuscationLevel>("medium");
   const { toast } = useToast();
 
   const obfuscateMutation = useMutation({
-    mutationFn: async (luaCode: string) => {
-      const res = await apiRequest("POST", "/api/obfuscate", { code: luaCode });
+    mutationFn: async ({ code, level }: { code: string, level: ObfuscationLevel }) => {
+      const res = await apiRequest("POST", "/api/obfuscate", { 
+        code,
+        level
+      });
       return res.json();
     },
     onSuccess: (data) => {
@@ -34,7 +47,7 @@ export default function TryItYourself() {
         
         toast({
           title: "Obfuscation complete",
-          description: "Your obfuscated code has been downloaded.",
+          description: `Your code has been obfuscated with ${data.level} protection.`,
         });
       }
     },
@@ -103,7 +116,7 @@ export default function TryItYourself() {
       return;
     }
     
-    obfuscateMutation.mutate(code);
+    obfuscateMutation.mutate({ code, level: obfuscationLevel });
   };
 
   return (
@@ -120,6 +133,41 @@ export default function TryItYourself() {
             onChange={(e) => setCode(e.target.value)}
           />
         </div>
+      </div>
+      
+      <div className="flex flex-col space-y-3 mb-4">
+        <label className="block text-gray-400">Obfuscation Level</label>
+        <Select
+          value={obfuscationLevel}
+          onValueChange={(value) => setObfuscationLevel(value as ObfuscationLevel)}
+        >
+          <SelectTrigger className="bg-gray-800 border-gray-700 text-gray-200">
+            <SelectValue placeholder="Select obfuscation level" />
+          </SelectTrigger>
+          <SelectContent className="bg-gray-800 border-gray-700 text-gray-200">
+            <SelectGroup>
+              <SelectLabel>Protection Level</SelectLabel>
+              <SelectItem value="light" className="cursor-pointer">
+                <div className="flex items-center">
+                  <Shield className="h-4 w-4 mr-2 text-green-400" />
+                  <span>Light - Basic protection</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="medium" className="cursor-pointer">
+                <div className="flex items-center">
+                  <Shield className="h-4 w-4 mr-2 text-yellow-400" />
+                  <span>Medium - Standard protection</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="heavy" className="cursor-pointer">
+                <div className="flex items-center">
+                  <Shield className="h-4 w-4 mr-2 text-red-400" />
+                  <span>Heavy - Maximum protection</span>
+                </div>
+              </SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
       
       <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">

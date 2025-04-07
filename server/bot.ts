@@ -1,11 +1,14 @@
 import { Client, GatewayIntentBits, Events, Message, Attachment } from "discord.js";
 import { obfuscateLua } from "./obfuscator";
 import { IStorage } from "./storage";
+import { ObfuscationLevel, ObfuscationLevelType } from "@shared/schema";
 import path from "path";
 
 const COMMAND_PREFIX = "!";
 const OBFUSCATE_COMMAND = "obfuscate";
+const HELP_COMMAND = "help";
 
+// Check if necessary secrets are available
 export function startBot(storage: IStorage) {
   const token = process.env.DISCORD_BOT_TOKEN;
   
@@ -43,7 +46,9 @@ export function startBot(storage: IStorage) {
     const command = args.shift()?.toLowerCase();
 
     if (command === OBFUSCATE_COMMAND) {
-      await handleObfuscateCommand(message, storage);
+      await handleObfuscateCommand(message, args, storage);
+    } else if (command === HELP_COMMAND) {
+      await handleHelpCommand(message);
     }
   });
 
@@ -68,11 +73,69 @@ export function startBot(storage: IStorage) {
   return client;
 }
 
-async function handleObfuscateCommand(message: Message, storage: IStorage) {
+// Help command handler to show available commands and options
+async function handleHelpCommand(message: Message) {
+  const helpEmbed = {
+    title: "Lua Obfuscator Bot - Help",
+    description: "This bot can obfuscate your Lua code to protect it from unauthorized viewing or copying.",
+    color: 0x3498db,
+    fields: [
+      {
+        name: "📌 Available Commands",
+        value: 
+          `\`${COMMAND_PREFIX}${OBFUSCATE_COMMAND} [level]\` - Obfuscate an attached Lua file\n` +
+          `\`${COMMAND_PREFIX}${HELP_COMMAND}\` - Show this help message`
+      },
+      {
+        name: "🔒 Obfuscation Levels",
+        value: 
+          "**light** - Basic obfuscation (comments removal, minification)\n" +
+          "**medium** - Default level (variable renaming + light)\n" +
+          "**heavy** - Advanced obfuscation (string encryption + medium)"
+      },
+      {
+        name: "📝 Examples",
+        value: 
+          `\`${COMMAND_PREFIX}${OBFUSCATE_COMMAND}\` - Obfuscate with default (medium) level\n` +
+          `\`${COMMAND_PREFIX}${OBFUSCATE_COMMAND} light\` - Use light obfuscation\n` +
+          `\`${COMMAND_PREFIX}${OBFUSCATE_COMMAND} heavy\` - Use heavy obfuscation`
+      }
+    ],
+    footer: {
+      text: "Attach a .lua file with your command to obfuscate it"
+    }
+  };
+  
+  await message.reply({ embeds: [helpEmbed] });
+}
+
+// Main command handler for obfuscation
+async function handleObfuscateCommand(message: Message, args: string[], storage: IStorage) {
   try {
+    // Parse obfuscation level from arguments
+    let obfuscationLevel: ObfuscationLevelType = ObfuscationLevel.Medium; // Default level
+    
+    if (args.length > 0) {
+      const requestedLevel = args[0].toLowerCase();
+      
+      if (requestedLevel === ObfuscationLevel.Light || 
+          requestedLevel === ObfuscationLevel.Medium || 
+          requestedLevel === ObfuscationLevel.Heavy) {
+        obfuscationLevel = requestedLevel as ObfuscationLevelType;
+      } else {
+        await message.reply(
+          `Invalid obfuscation level: "${requestedLevel}". ` +
+          `Valid options are: light, medium, heavy. Using medium as default.`
+        );
+      }
+    }
+    
     // Check if there are any attachments
     if (!message.attachments.size) {
-      await message.reply("Please attach a Lua file to obfuscate.");
+      await message.reply(
+        "Please attach a Lua file to obfuscate.\n" +
+        `Type \`${COMMAND_PREFIX}${HELP_COMMAND}\` for help.`
+      );
       return;
     }
 
@@ -91,7 +154,7 @@ async function handleObfuscateCommand(message: Message, storage: IStorage) {
     
     try {
       // Acknowledge receipt of the command in the channel
-      await message.reply("Processing your Lua file. I'll send you the obfuscated code via DM.");
+      await message.reply(`Processing your Lua file with ${obfuscationLevel} obfuscation. I'll send you the obfuscated code via DM.`);
       
       // Fetch the attachment content
       const response = await fetch(attachment.url);
@@ -101,12 +164,12 @@ async function handleObfuscateCommand(message: Message, storage: IStorage) {
       
       const luaCode = await response.text();
       
-      // Obfuscate the code
-      const obfuscatedCode = obfuscateLua(luaCode);
+      // Obfuscate the code with the specified level
+      const obfuscatedCode = obfuscateLua(luaCode, obfuscationLevel);
       
       // Send the obfuscated code to the user via DM
       await message.author.send({
-        content: "Here's your obfuscated Lua code:",
+        content: `Here's your Lua code obfuscated with ${obfuscationLevel} protection:`,
         files: [{
           attachment: Buffer.from(obfuscatedCode),
           name: `obfuscated_${fileName}`

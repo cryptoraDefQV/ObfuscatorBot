@@ -41,9 +41,25 @@ export type User = typeof users.$inferSelect;
 export type InsertObfuscationLog = z.infer<typeof insertObfuscationLogSchema>;
 export type ObfuscationLog = typeof obfuscationLogs.$inferSelect;
 
+// Define obfuscation levels
+export const ObfuscationLevel = {
+  Light: "light",     // Basic obfuscation (comments removal, minification)
+  Medium: "medium",   // Default level (variable renaming + light)
+  Heavy: "heavy",     // Advanced obfuscation (string encryption + medium)
+} as const;
+
+// Validation schema for obfuscation level
+export const obfuscationLevelSchema = z.enum([
+  ObfuscationLevel.Light,
+  ObfuscationLevel.Medium, 
+  ObfuscationLevel.Heavy
+]);
+
 // Schema for the Lua code obfuscation request
 export const obfuscateRequestSchema = z.object({
   code: z.string().min(1, "Lua code is required"),
+  level: obfuscationLevelSchema.default(ObfuscationLevel.Medium),
 });
 
 export type ObfuscateRequest = z.infer<typeof obfuscateRequestSchema>;
+export type ObfuscationLevelType = z.infer<typeof obfuscationLevelSchema>;
