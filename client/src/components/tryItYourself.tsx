@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Code, FileUp, Loader2, Shield } from "lucide-react";
+import { Code, FileUp, Loader2, Shield, Lock, FileCode } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -127,13 +127,21 @@ export default function TryItYourself() {
 
   return (
     <div className="bg-gray-700 rounded-lg p-4">
-      <h2 className="font-semibold text-lg mb-4">Try It Yourself</h2>
+      <h2 className="section-header font-semibold text-xl mb-4">Try It Yourself</h2>
       
-      <div className="bg-gray-800 rounded-md p-4 mb-4">
-        <label className="block text-gray-400 mb-2">Paste your Lua code</label>
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-gray-300">Paste your Lua code</label>
+          {file && (
+            <div className="flex items-center text-xs text-gray-400">
+              <FileCode className="h-3 w-3 mr-1" />
+              <span>{file.name}</span>
+            </div>
+          )}
+        </div>
         <div className="relative">
           <Textarea 
-            className="w-full bg-gray-900 text-gray-200 p-3 rounded-md border border-gray-700 focus:outline-none focus:border-indigo-500 min-h-[150px]"
+            className="w-full bg-gray-900 text-gray-200 p-3 rounded-md border border-gray-700 focus:outline-none focus:border-blue-500 min-h-[150px] font-mono text-sm"
             placeholder={`local function hello()\n    print('Hello, world!')\nend\n\nhello()`}
             value={code}
             onChange={(e) => setCode(e.target.value)}
@@ -142,32 +150,32 @@ export default function TryItYourself() {
       </div>
       
       <div className="flex flex-col space-y-3 mb-4">
-        <label className="block text-gray-400">Obfuscation Level</label>
+        <label className="block text-gray-300">Protection Level</label>
         <Select
           value={obfuscationLevel}
           onValueChange={(value) => setObfuscationLevel(value as ObfuscationLevel)}
         >
           <SelectTrigger className="bg-gray-800 border-gray-700 text-gray-200">
-            <SelectValue placeholder="Select obfuscation level" />
+            <SelectValue placeholder="Select protection level" />
           </SelectTrigger>
           <SelectContent className="bg-gray-800 border-gray-700 text-gray-200">
             <SelectGroup>
               <SelectLabel>Protection Level</SelectLabel>
               <SelectItem value="light" className="cursor-pointer">
                 <div className="flex items-center">
-                  <Shield className="h-4 w-4 mr-2 text-green-400" />
+                  <FileCode className="h-4 w-4 mr-2 text-blue-400" />
                   <span>Light - Basic protection</span>
                 </div>
               </SelectItem>
               <SelectItem value="medium" className="cursor-pointer">
                 <div className="flex items-center">
-                  <Shield className="h-4 w-4 mr-2 text-yellow-400" />
+                  <Shield className="h-4 w-4 mr-2 text-blue-400" />
                   <span>Medium - Standard protection</span>
                 </div>
               </SelectItem>
               <SelectItem value="heavy" className="cursor-pointer">
                 <div className="flex items-center">
-                  <Shield className="h-4 w-4 mr-2 text-red-400" />
+                  <Lock className="h-4 w-4 mr-2 text-blue-400" />
                   <span>Heavy - Maximum protection</span>
                 </div>
               </SelectItem>
@@ -179,7 +187,7 @@ export default function TryItYourself() {
       <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
         <div className="flex-grow">
           <div 
-            className="bg-gray-800 rounded-md p-4 h-full flex flex-col justify-center items-center border-2 border-dashed border-gray-700 hover:border-indigo-500 transition-colors cursor-pointer"
+            className="bg-gray-800 rounded-md p-4 h-full flex flex-col justify-center items-center border-2 border-dashed border-gray-700 hover:border-blue-500 transition-colors cursor-pointer"
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             onClick={() => document.getElementById('fileInput')?.click()}
@@ -191,14 +199,14 @@ export default function TryItYourself() {
               className="hidden" 
               onChange={handleFileUpload} 
             />
-            <FileUp className="text-indigo-400 text-2xl mb-2 h-8 w-8" />
-            <p className="text-center text-gray-400">Upload .lua file</p>
+            <FileUp className="text-blue-400 text-2xl mb-2 h-8 w-8" />
+            <p className="text-center text-gray-300">Upload .lua file</p>
             <p className="text-center text-gray-400 text-xs mt-1">or drag and drop</p>
           </div>
         </div>
         <div className="sm:w-1/3">
           <Button
-            className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-4 px-6 rounded-md transition-colors flex items-center justify-center h-full"
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 px-6 rounded-md transition-colors flex items-center justify-center h-full glow-effect"
             onClick={handleObfuscate}
             disabled={obfuscateMutation.isPending}
           >
@@ -209,12 +217,24 @@ export default function TryItYourself() {
               </>
             ) : (
               <>
-                <Code className="mr-2 h-4 w-4" />
+                <Lock className="mr-2 h-4 w-4" />
                 <span>Obfuscate</span>
               </>
             )}
           </Button>
         </div>
+      </div>
+      
+      <div className="mt-4 bg-gray-800 p-3 rounded-md border border-gray-700">
+        <div className="flex items-center text-blue-400 mb-1">
+          <Shield className="h-4 w-4 mr-2" />
+          <p className="text-sm font-semibold">Protection Tips:</p>
+        </div>
+        <ul className="text-gray-400 text-xs space-y-1 ml-6 list-disc">
+          <li>For FiveM scripts, use light protection for configs, medium for utilities, and heavy for core business logic</li>
+          <li>Highly obfuscated code may run slightly slower - use the appropriate level for your needs</li>
+          <li>Always keep an unobfuscated backup of your original code</li>
+        </ul>
       </div>
     </div>
   );

@@ -11,3 +11,79 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* Custom Discord-inspired dark theme */
+.bg-discord-bg {
+  background-color: #1e1f22;
+}
+
+.discord-embed {
+  background-color: #2b2d31;
+  border-left: 4px solid #3b82f6;
+  border-radius: 4px;
+}
+
+/* Glowing effect for buttons */
+.glow-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.glow-effect::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, rgba(59, 130, 246, 0) 70%);
+  opacity: 0;
+  transition: opacity 0.6s;
+  pointer-events: none;
+}
+
+.glow-effect:hover::after {
+  opacity: 1;
+}
+
+/* Code syntax highlighting enhancements */
+.code-block {
+  font-family: 'Fira Code', monospace;
+  background-color: #2d2d2d;
+  border-radius: 6px;
+  margin: 1rem 0;
+  position: relative;
+}
+
+.code-block pre {
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.code-block .language-indicator {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: #3b82f6;
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0 6px 0 6px;
+}
+
+/* Banner and section styling */
+.section-header {
+  position: relative;
+  padding-left: 1rem;
+}
+
+.section-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.2rem;
+  height: 80%;
+  width: 4px;
+  background: linear-gradient(to bottom, #3b82f6, #1e40af);
+  border-radius: 2px;
+}

@@ -8,25 +8,27 @@ export default function DmExample() {
   return (
     <div className="bg-gray-800 rounded-lg p-4 mb-6">
       <div className="flex items-center mb-4">
-        <Mail className="text-indigo-400 mr-2 h-5 w-5" />
-        <h2 className="font-semibold text-lg">Direct Message Example</h2>
+        <Mail className="text-blue-400 mr-2 h-5 w-5" />
+        <h2 className="section-header font-semibold text-xl">Direct Message Example</h2>
       </div>
       
       <div className="flex mb-4">
         <div className="w-10 h-10 rounded-full flex-shrink-0 mr-3 overflow-hidden">
-          <div className="bg-amber-500 w-full h-full flex items-center justify-center">
-            <Code className="h-5 w-5 text-white" />
-          </div>
+          <img 
+            src="/logo.png"
+            alt="OBFUSCORE Logo" 
+            className="w-full h-full object-contain bg-gray-800"
+          />
         </div>
         <div className="flex-grow">
           <div className="flex items-center">
-            <span className="font-medium text-amber-400">LuaObfuscatorBot</span>
-            <span className="bg-amber-600 text-white text-xs px-1 rounded ml-2">BOT</span>
+            <span className="font-medium text-blue-400">OBFUSCORE</span>
+            <span className="bg-blue-600 text-white text-xs px-1 rounded ml-2">BOT</span>
             <span className="text-gray-400 text-xs ml-2">Today at 12:34 PM</span>
           </div>
           
           {/* Discord-style embed with left border */}
-          <div className="mt-3 border-l-4 border-amber-500 rounded-r-md bg-gray-700 p-3">
+          <div className="mt-3 discord-embed p-3">
             <div className="flex items-center mb-2">
               <Check className="h-5 w-5 mr-2 text-green-400" />
               <span className="font-semibold text-white">Obfuscation Complete</span>
@@ -38,17 +40,23 @@ export default function DmExample() {
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div className="bg-gray-800 rounded p-2">
                 <div className="text-xs text-gray-400 mb-1">📄 File</div>
-                <div className="text-sm text-gray-200">script.lua</div>
+                <div className="text-sm text-gray-200">fivem_script.lua</div>
               </div>
               <div className="bg-gray-800 rounded p-2">
                 <div className="text-xs text-gray-400 mb-1">🔒 Protection Level</div>
-                <div className="text-sm text-gray-200">Heavy</div>
+                <div className="text-sm text-gray-200 flex items-center">
+                  <Lock className="h-3 w-3 mr-1 text-blue-400" />
+                  Heavy
+                </div>
               </div>
             </div>
             
             <div className="flex justify-between items-center text-xs text-gray-400">
               <div className="flex items-center">
-                <span>LUA Obfuscator Bot</span>
+                <div className="w-4 h-4 mr-1">
+                  <img src="/logo.png" alt="OBFUSCORE Logo" className="w-full h-full object-contain" />
+                </div>
+                <span>OBFUSCORE</span>
               </div>
               <div>
                 <span>{new Date().toLocaleTimeString()}</span>
@@ -60,11 +68,11 @@ export default function DmExample() {
           <div className="bg-gray-700 mt-3 rounded p-3 border border-gray-600">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <FileType className="text-amber-400 mr-2 h-5 w-5" />
-                <span className="text-gray-300">obfuscated_script.lua</span>
+                <FileType className="text-blue-400 mr-2 h-5 w-5" />
+                <span className="text-gray-300">obfuscated_fivem_script.lua</span>
               </div>
               <Button 
-                className="bg-amber-500 hover:bg-amber-600 px-3 py-1 rounded text-white text-sm transition-colors"
+                className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-white text-sm transition-colors glow-effect"
               >
                 <Download className="h-4 w-4 mr-1" />
                 Download
@@ -73,10 +81,13 @@ export default function DmExample() {
           </div>
           
           {/* Code preview */}
-          <div className="mt-3 bg-[#282C34] rounded-md p-3 max-h-80 overflow-y-auto border border-gray-600">
-            <div className="flex items-center mb-2 text-gray-400 text-sm">
-              <Lock className="h-4 w-4 mr-1 text-amber-400" />
-              <span>Obfuscated Lua Code</span>
+          <div className="mt-3 bg-[#282C34] rounded-md p-3 max-h-80 overflow-y-auto border border-gray-600 code-block">
+            <div className="flex items-center mb-2 text-gray-400 text-sm justify-between">
+              <div className="flex items-center">
+                <Lock className="h-4 w-4 mr-1 text-blue-400" />
+                <span>Obfuscated Lua Code</span>
+              </div>
+              <span className="language-indicator">lua</span>
             </div>
             <pre>
               <code className="text-sm text-gray-200 font-mono whitespace-pre-wrap break-words">
@@ -90,7 +101,7 @@ export default function DmExample() {
             <div className="text-gray-400 text-xs mb-2">
               In the channel:
             </div>
-            <div className="border-l-4 border-green-500 rounded-r-md bg-gray-700 p-3">
+            <div className="discord-embed border-green-500 p-3">
               <div className="flex items-center">
                 <Check className="h-5 w-5 mr-2 text-green-400" />
                 <span className="font-semibold text-white">DM Sent Successfully</span>
@@ -100,6 +111,18 @@ export default function DmExample() {
                 <br />
                 Check your direct messages from me.
               </p>
+              
+              <div className="flex justify-between items-center text-xs text-gray-400 mt-2">
+                <div className="flex items-center">
+                  <div className="w-4 h-4 mr-1">
+                    <img src="/logo.png" alt="OBFUSCORE Logo" className="w-full h-full object-contain" />
+                  </div>
+                  <span>OBFUSCORE</span>
+                </div>
+                <div>
+                  <span>{new Date().toLocaleTimeString()}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
