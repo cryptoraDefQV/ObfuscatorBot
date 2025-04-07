@@ -26,18 +26,39 @@ export function startBot(storage: IStorage) {
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.DirectMessages,
-      // MessageContent is a privileged intent and must be enabled in the Discord Developer Portal
-      // GatewayIntentBits.MessageContent
+      GatewayIntentBits.MessageContent,  // Privileged intent for reading message content
+      GatewayIntentBits.GuildMembers,    // For accessing guild member information
+      GatewayIntentBits.DirectMessageReactions,  // For handling DM reactions
+      GatewayIntentBits.GuildMessageReactions     // For handling guild message reactions
     ],
   });
 
   client.once(Events.ClientReady, (readyClient) => {
     console.log(`Discord bot logged in as ${readyClient.user.tag}`);
+    
+    // Set bot's status to show it's ready for commands
+    readyClient.user.setPresence({
+      status: 'online',
+      activities: [{ name: `${COMMAND_PREFIX}help for commands`, type: 0 }]
+    });
+    
+    console.log("Bot is ready and listening for commands.");
+    console.log(`Use ${COMMAND_PREFIX}${HELP_COMMAND} to see available commands.`);
   });
 
   client.on(Events.MessageCreate, async (message: Message) => {
     // Ignore messages from bots (including self)
     if (message.author.bot) return;
+
+    // Log all messages for debugging
+    let channelInfo = 'DM';
+    if (message.guild) {
+      const channel = message.channel;
+      // Safe way to access channel name regardless of channel type
+      const channelName = channel.toString();
+      channelInfo = `${message.guild.name} ${channelName}`;
+    }
+    console.log(`Received message from ${message.author.tag} in ${channelInfo}: ${message.content}`);
 
     // Check if message starts with the command prefix
     if (!message.content.startsWith(COMMAND_PREFIX)) return;
@@ -168,16 +189,54 @@ async function handleObfuscateCommand(message: Message, args: string[], storage:
       const obfuscatedCode = obfuscateLua(luaCode, obfuscationLevel);
       
       // Send the obfuscated code to the user via DM
-      await message.author.send({
-        content: `Here's your Lua code obfuscated with ${obfuscationLevel} protection:`,
-        files: [{
-          attachment: Buffer.from(obfuscatedCode),
-          name: `obfuscated_${fileName}`
-        }]
-      });
-      
-      // Confirm in the channel that the DM was sent
-      await message.reply("I've sent you a DM with the obfuscated code!");
+      console.log("Attempting to send DM to user:", message.author.tag);
+      try {
+        // Check if the user allows DMs
+        console.log("Checking if user allows DMs...");
+        
+        // Try sending a test DM first to verify permissions
+        await message.author.send({
+          content: `Preparing your obfuscated Lua code with ${obfuscationLevel} protection...`
+        });
+        
+        console.log("Test DM sent successfully, now sending the file...");
+        
+        // If test DM succeeds, send the actual file
+        await message.author.send({
+          content: `Here's your Lua code obfuscated with ${obfuscationLevel} protection:`,
+          files: [{
+            attachment: Buffer.from(obfuscatedCode),
+            name: `obfuscated_${fileName}`
+          }]
+        });
+        
+        console.log("Successfully sent DM with file to user:", message.author.tag);
+        
+        // Confirm in the channel that the DM was sent
+        await message.reply("I've sent you a DM with the obfuscated code!");
+      } catch (error: any) {
+        console.error("Failed to send DM:", error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error("Error details:", errorMessage);
+        
+        // Check for common DM failure reasons
+        let errorMsg = "I couldn't send you a DM. ";
+        
+        if (errorMessage.includes("cannot send messages to this user") || 
+            errorMessage.includes("blocked") ||
+            errorMessage.includes("not allowed")) {
+          errorMsg += "This may be because you have your DMs closed or have blocked the bot. ";
+        }
+        
+        // If DM fails, try to send in the channel instead
+        await message.reply({
+          content: errorMsg + "Here's your obfuscated code in the channel instead:",
+          files: [{
+            attachment: Buffer.from(obfuscatedCode),
+            name: `obfuscated_${fileName}`
+          }]
+        });
+      }
       
       // Log the successful obfuscation
       await storage.createObfuscationLog({
