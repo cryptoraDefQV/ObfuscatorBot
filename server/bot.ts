@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Events, Message, Attachment } from "discord.js";
+import { Client, GatewayIntentBits, Events, Message, Attachment, ChannelType } from "discord.js";
 import { obfuscateLua } from "./obfuscator";
 import { IStorage } from "./storage";
 import { ObfuscationLevel, ObfuscationLevelType } from "@shared/schema";
@@ -8,7 +8,35 @@ const COMMAND_PREFIX = "!";
 const OBFUSCATE_COMMAND = "obfuscate";
 const HELP_COMMAND = "help";
 
+// Owner information for system notifications
+const OWNER_ID = "1294068543859724451"; // iliasyuki's user ID
+
 // Check if necessary secrets are available
+// Global client reference for easier access in handlers
+let discordClient: Client | null = null;
+
+// Helper function to send notifications to the bot owner
+export async function sendOwnerNotification(message: string, isError = false) {
+  try {
+    if (!discordClient || !discordClient.isReady()) {
+      console.error("Cannot send notification: Discord client not ready");
+      return;
+    }
+    
+    const owner = await discordClient.users.fetch(OWNER_ID);
+    if (owner) {
+      await owner.send({
+        content: isError 
+          ? `⚠️ **ERROR ALERT**: ${message}`
+          : `🔔 **SYSTEM NOTIFICATION**: ${message}`
+      });
+      console.log(`Notification sent to owner: ${message}`);
+    }
+  } catch (error) {
+    console.error(`Failed to send notification to owner: ${error}`);
+  }
+}
+
 export function startBot(storage: IStorage) {
   const token = process.env.DISCORD_BOT_TOKEN;
   
@@ -32,8 +60,11 @@ export function startBot(storage: IStorage) {
       GatewayIntentBits.GuildMessageReactions     // For handling guild message reactions
     ],
   });
+  
+  // Set global client reference
+  discordClient = client;
 
-  client.once(Events.ClientReady, (readyClient) => {
+  client.once(Events.ClientReady, async (readyClient) => {
     console.log(`Discord bot logged in as ${readyClient.user.tag}`);
     
     // Set bot's status to show it's ready for commands
@@ -44,6 +75,14 @@ export function startBot(storage: IStorage) {
     
     console.log("Bot is ready and listening for commands.");
     console.log(`Use ${COMMAND_PREFIX}${HELP_COMMAND} to see available commands.`);
+    
+    // Send notification to owner that bot is online
+    try {
+      const uptime = new Date().toLocaleString();
+      await sendOwnerNotification(`Bot is now online! (${uptime})\nLogged in as: ${readyClient.user.tag}`);
+    } catch (error) {
+      console.error("Failed to send startup notification:", error);
+    }
   });
 
   client.on(Events.MessageCreate, async (message: Message) => {
@@ -91,6 +130,17 @@ export function startBot(storage: IStorage) {
     }
   });
 
+  // Attach error handlers to catch unhandled errors
+  process.on('uncaughtException', async (error) => {
+    console.error('Uncaught Exception:', error);
+    await sendOwnerNotification(`Uncaught Exception: ${error.message}`, true);
+  });
+
+  process.on('unhandledRejection', async (error, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', error);
+    await sendOwnerNotification(`Unhandled Promise Rejection: ${error}`, true);
+  });
+  
   return client;
 }
 
@@ -132,6 +182,8 @@ async function handleHelpCommand(message: Message) {
 
 // Main command handler for obfuscation
 async function handleObfuscateCommand(message: Message, args: string[], storage: IStorage) {
+  // Get reference to client for notifications
+  const client = message.client;
   try {
     // Parse obfuscation level from arguments
     let obfuscationLevel: ObfuscationLevelType = ObfuscationLevel.Medium; // Default level
@@ -262,10 +314,28 @@ async function handleObfuscateCommand(message: Message, args: string[], storage:
         fileSize: attachment.size,
         success: false
       });
+      
+      // Send notification to owner about the error
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      const userInfo = `${message.author.tag} (${message.author.id})`;
+      const guildInfo = message.guild ? ` in ${message.guild.name}` : '';
+      await sendOwnerNotification(
+        `Obfuscation error for ${fileName} by ${userInfo}${guildInfo}.\nError: ${errorMsg}`, 
+        true
+      );
     }
   } catch (error) {
     console.error("Unexpected error in obfuscate command handler:", error);
     await message.reply("An unexpected error occurred. Please try again later.");
+    
+    // Send notification to owner about critical error
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    const userInfo = `${message.author.tag} (${message.author.id})`;
+    const guildInfo = message.guild ? ` in ${message.guild.name}` : '';
+    await sendOwnerNotification(
+      `CRITICAL ERROR in obfuscate command by ${userInfo}${guildInfo}.\nError: ${errorMsg}`, 
+      true
+    );
   }
 }
 
