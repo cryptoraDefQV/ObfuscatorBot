@@ -15,7 +15,7 @@ const OWNER_ID = "1294068543859724451"; // iliasyuki's user ID
 // Global client reference for easier access in handlers
 let discordClient: Client | null = null;
 
-// Helper function to send notifications to the bot owner
+// Helper function to send notifications to the bot owner with nice embeds
 export async function sendOwnerNotification(message: string, isError = false) {
   try {
     if (!discordClient || !discordClient.isReady()) {
@@ -25,11 +25,30 @@ export async function sendOwnerNotification(message: string, isError = false) {
     
     const owner = await discordClient.users.fetch(OWNER_ID);
     if (owner) {
+      // Create a stylish embed for the notification
+      const embed = {
+        color: isError ? 0xED4245 : 0xF5A623, // Red for errors, Orange (from logo) for info
+        title: isError ? "⚠️ ERROR ALERT" : "🔔 SYSTEM NOTIFICATION",
+        description: message,
+        thumbnail: {
+          url: "attachment://logo.png" // Reference to the attached image
+        },
+        timestamp: new Date().toISOString(),
+        footer: {
+          text: "LUA Obfuscator Bot",
+          icon_url: "attachment://logo.png" // Use logo in footer too
+        }
+      };
+      
+      // Send the embed with attached logo
       await owner.send({
-        content: isError 
-          ? `⚠️ **ERROR ALERT**: ${message}`
-          : `🔔 **SYSTEM NOTIFICATION**: ${message}`
+        embeds: [embed],
+        files: [{
+          attachment: 'client/public/logo.png',
+          name: 'logo.png'
+        }]
       });
+      
       console.log(`Notification sent to owner: ${message}`);
     }
   } catch (error) {
@@ -147,9 +166,9 @@ export function startBot(storage: IStorage) {
 // Help command handler to show available commands and options
 async function handleHelpCommand(message: Message) {
   const helpEmbed = {
-    title: "Lua Obfuscator Bot - Help",
+    title: "LUA Obfuscator Bot - Help",
     description: "This bot can obfuscate your Lua code to protect it from unauthorized viewing or copying.",
-    color: 0x3498db,
+    color: 0xF5A623, // Orange from logo
     fields: [
       {
         name: "📌 Available Commands",
@@ -172,12 +191,23 @@ async function handleHelpCommand(message: Message) {
           `\`${COMMAND_PREFIX}${OBFUSCATE_COMMAND} heavy\` - Use heavy obfuscation`
       }
     ],
+    thumbnail: {
+      url: "attachment://logo.png" // Reference to the attached image
+    },
     footer: {
-      text: "Attach a .lua file with your command to obfuscate it"
-    }
+      text: "Attach a .lua file with your command to obfuscate it",
+      icon_url: "attachment://logo.png"
+    },
+    timestamp: new Date().toISOString()
   };
   
-  await message.reply({ embeds: [helpEmbed] });
+  await message.reply({ 
+    embeds: [helpEmbed],
+    files: [{
+      attachment: 'client/public/logo.png',
+      name: 'logo.png'
+    }]
+  });
 }
 
 // Main command handler for obfuscation
@@ -196,19 +226,71 @@ async function handleObfuscateCommand(message: Message, args: string[], storage:
           requestedLevel === ObfuscationLevel.Heavy) {
         obfuscationLevel = requestedLevel as ObfuscationLevelType;
       } else {
-        await message.reply(
-          `Invalid obfuscation level: "${requestedLevel}". ` +
-          `Valid options are: light, medium, heavy. Using medium as default.`
-        );
+        // Invalid obfuscation level specified
+        const invalidLevelEmbed = {
+          color: 0xF5A623, // Orange from logo (warning rather than error)
+          title: "⚠️ Invalid Protection Level",
+          description: `"${requestedLevel}" is not a valid protection level. Using **medium** protection (default).`,
+          fields: [
+            {
+              name: "🔒 Valid Protection Levels",
+              value: "• **light** - Basic protection (comments removal, minification)\n" +
+                     "• **medium** - Default level (light + variable renaming)\n" +
+                     "• **heavy** - Maximum protection (medium + string encryption)",
+              inline: false
+            }
+          ],
+          thumbnail: {
+            url: "attachment://logo.png"
+          },
+          footer: {
+            text: "LUA Obfuscator Bot",
+            icon_url: "attachment://logo.png"
+          },
+          timestamp: new Date().toISOString()
+        };
+        
+        await message.reply({
+          embeds: [invalidLevelEmbed],
+          files: [{
+            attachment: 'client/public/logo.png',
+            name: 'logo.png'
+          }]
+        });
       }
     }
     
     // Check if there are any attachments
     if (!message.attachments.size) {
-      await message.reply(
-        "Please attach a Lua file to obfuscate.\n" +
-        `Type \`${COMMAND_PREFIX}${HELP_COMMAND}\` for help.`
-      );
+      // No attachment included with the obfuscate command
+      const noFileEmbed = {
+        color: 0xED4245, // Discord red for errors
+        title: "❌ Missing File",
+        description: "Please attach a Lua file (.lua) to obfuscate.",
+        fields: [
+          {
+            name: "📚 Need Help?",
+            value: `Type \`${COMMAND_PREFIX}${HELP_COMMAND}\` for more information.`,
+            inline: false
+          }
+        ],
+        thumbnail: {
+          url: "attachment://logo.png"
+        },
+        footer: {
+          text: "LUA Obfuscator Bot",
+          icon_url: "attachment://logo.png"
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      await message.reply({
+        embeds: [noFileEmbed],
+        files: [{
+          attachment: 'client/public/logo.png',
+          name: 'logo.png'
+        }]
+      });
       return;
     }
 
@@ -217,7 +299,40 @@ async function handleObfuscateCommand(message: Message, args: string[], storage:
     );
 
     if (!luaAttachments.size) {
-      await message.reply("No valid Lua files found. Please attach a .lua file.");
+      // Invalid file type attached (not a .lua file)
+      const invalidFileEmbed = {
+        color: 0xED4245, // Discord red for errors
+        title: "❌ Invalid File Type",
+        description: "No valid Lua files found. Please attach a file with the `.lua` extension.",
+        fields: [
+          {
+            name: "🔍 What happened?",
+            value: "The file you attached doesn't have a `.lua` extension. Only Lua files can be obfuscated.",
+            inline: false
+          },
+          {
+            name: "📚 Need Help?",
+            value: `Type \`${COMMAND_PREFIX}${HELP_COMMAND}\` for more information.`,
+            inline: false
+          }
+        ],
+        thumbnail: {
+          url: "attachment://logo.png"
+        },
+        footer: {
+          text: "LUA Obfuscator Bot",
+          icon_url: "attachment://logo.png"
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      await message.reply({
+        embeds: [invalidFileEmbed],
+        files: [{
+          attachment: 'client/public/logo.png',
+          name: 'logo.png'
+        }]
+      });
       return;
     }
 
@@ -226,8 +341,40 @@ async function handleObfuscateCommand(message: Message, args: string[], storage:
     const fileName = attachment.name || "unknown.lua";
     
     try {
-      // Acknowledge receipt of the command in the channel
-      await message.reply(`Processing your Lua file with ${obfuscationLevel} obfuscation. I'll send you the obfuscated code via DM.`);
+      // Acknowledge receipt of the command in the channel with an embed
+      const processingEmbed = {
+        color: 0xF5A623, // Orange from logo
+        title: "⚙️ Processing Lua File",
+        description: `I'm working on obfuscating your file with **${obfuscationLevel}** protection.`,
+        fields: [
+          {
+            name: "📄 File",
+            value: fileName,
+            inline: true
+          },
+          {
+            name: "📨 Delivery Method",
+            value: "You'll receive the result via DM",
+            inline: true
+          }
+        ],
+        thumbnail: {
+          url: "attachment://logo.png"
+        },
+        footer: {
+          text: "LUA Obfuscator Bot",
+          icon_url: "attachment://logo.png"
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      await message.reply({
+        embeds: [processingEmbed],
+        files: [{
+          attachment: 'client/public/logo.png',
+          name: 'logo.png'
+        }]
+      });
       
       // Fetch the attachment content
       const response = await fetch(attachment.url);
@@ -247,25 +394,95 @@ async function handleObfuscateCommand(message: Message, args: string[], storage:
         console.log("Checking if user allows DMs...");
         
         // Try sending a test DM first to verify permissions
+        const testEmbed = {
+          color: 0xF5A623, // Orange from logo
+          title: "🔒 Obfuscation in Progress",
+          description: `Preparing your Lua code with **${obfuscationLevel}** protection...`,
+          thumbnail: {
+            url: "attachment://logo.png"
+          },
+          footer: {
+            text: "LUA Obfuscator Bot",
+            icon_url: "attachment://logo.png"
+          },
+          timestamp: new Date().toISOString()
+        };
+        
         await message.author.send({
-          content: `Preparing your obfuscated Lua code with ${obfuscationLevel} protection...`
+          embeds: [testEmbed],
+          files: [{
+            attachment: 'client/public/logo.png',
+            name: 'logo.png'
+          }]
         });
         
         console.log("Test DM sent successfully, now sending the file...");
         
-        // If test DM succeeds, send the actual file
+        // If test DM succeeds, send the actual file with a nice embed
+        const resultEmbed = {
+          color: 0xF5A623, // Orange from logo
+          title: "✅ Obfuscation Complete",
+          description: `Your Lua code has been obfuscated with **${obfuscationLevel}** protection.`,
+          fields: [
+            {
+              name: "📄 File",
+              value: fileName,
+              inline: true
+            },
+            {
+              name: "🔒 Protection Level",
+              value: obfuscationLevel.charAt(0).toUpperCase() + obfuscationLevel.slice(1),
+              inline: true
+            }
+          ],
+          thumbnail: {
+            url: "attachment://logo.png"
+          },
+          footer: {
+            text: "LUA Obfuscator Bot",
+            icon_url: "attachment://logo.png"
+          },
+          timestamp: new Date().toISOString()
+        };
+        
         await message.author.send({
-          content: `Here's your Lua code obfuscated with ${obfuscationLevel} protection:`,
-          files: [{
-            attachment: Buffer.from(obfuscatedCode),
-            name: `obfuscated_${fileName}`
-          }]
+          embeds: [resultEmbed],
+          files: [
+            {
+              attachment: 'client/public/logo.png',
+              name: 'logo.png'
+            },
+            {
+              attachment: Buffer.from(obfuscatedCode),
+              name: `obfuscated_${fileName}`
+            }
+          ]
         });
         
         console.log("Successfully sent DM with file to user:", message.author.tag);
         
-        // Confirm in the channel that the DM was sent
-        await message.reply("I've sent you a DM with the obfuscated code!");
+        // Confirm in the channel that the DM was sent using embed
+        const confirmEmbed = {
+          color: 0x57F287, // Discord green for success
+          title: "✅ DM Sent Successfully",
+          description: `I've sent you a DM with the obfuscated code!\nCheck your direct messages from me.`,
+          thumbnail: {
+            url: "attachment://logo.png"
+          },
+          footer: {
+            text: "LUA Obfuscator Bot",
+            icon_url: "attachment://logo.png"
+          },
+          timestamp: new Date().toISOString()
+        };
+        
+        await message.reply({
+          embeds: [confirmEmbed],
+          files: [{
+            attachment: 'client/public/logo.png',
+            name: 'logo.png'
+          }]
+        });
       } catch (error: any) {
         console.error("Failed to send DM:", error);
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -280,13 +497,45 @@ async function handleObfuscateCommand(message: Message, args: string[], storage:
           errorMsg += "This may be because you have your DMs closed or have blocked the bot. ";
         }
         
-        // If DM fails, try to send in the channel instead
+        // If DM fails, try to send in the channel instead with a nice embed
+        const fallbackEmbed = {
+          color: 0xF5A623, // Orange from logo
+          title: "⚠️ DM Delivery Failed",
+          description: errorMsg + "Here's your obfuscated code in the channel instead:",
+          fields: [
+            {
+              name: "📄 File",
+              value: fileName,
+              inline: true
+            },
+            {
+              name: "🔒 Protection Level",
+              value: obfuscationLevel.charAt(0).toUpperCase() + obfuscationLevel.slice(1),
+              inline: true
+            }
+          ],
+          thumbnail: {
+            url: "attachment://logo.png"
+          },
+          footer: {
+            text: "LUA Obfuscator Bot",
+            icon_url: "attachment://logo.png"
+          },
+          timestamp: new Date().toISOString()
+        };
+        
         await message.reply({
-          content: errorMsg + "Here's your obfuscated code in the channel instead:",
-          files: [{
-            attachment: Buffer.from(obfuscatedCode),
-            name: `obfuscated_${fileName}`
-          }]
+          embeds: [fallbackEmbed],
+          files: [
+            {
+              attachment: 'client/public/logo.png',
+              name: 'logo.png'
+            },
+            {
+              attachment: Buffer.from(obfuscatedCode),
+              name: `obfuscated_${fileName}`
+            }
+          ]
         });
       }
       
@@ -301,11 +550,40 @@ async function handleObfuscateCommand(message: Message, args: string[], storage:
     } catch (error) {
       console.error("Error handling obfuscate command:", error);
       
-      // Send error message to the user
-      await message.reply(
-        "Sorry, I couldn't obfuscate your Lua file. " +
-        `Error: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      // Send error message to the user with an embed
+      const errorEmbed = {
+        color: 0xED4245, // Discord red for errors
+        title: "❌ Obfuscation Failed",
+        description: "Sorry, I couldn't obfuscate your Lua file.",
+        fields: [
+          {
+            name: "📄 File",
+            value: fileName,
+            inline: true
+          },
+          {
+            name: "❓ Error",
+            value: error instanceof Error ? error.message : "Unknown error",
+            inline: false
+          }
+        ],
+        thumbnail: {
+          url: "attachment://logo.png"
+        },
+        footer: {
+          text: "LUA Obfuscator Bot",
+          icon_url: "attachment://logo.png"
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      await message.reply({
+        embeds: [errorEmbed],
+        files: [{
+          attachment: 'client/public/logo.png',
+          name: 'logo.png'
+        }]
+      });
       
       // Log the failed obfuscation
       await storage.createObfuscationLog({
@@ -326,7 +604,36 @@ async function handleObfuscateCommand(message: Message, args: string[], storage:
     }
   } catch (error) {
     console.error("Unexpected error in obfuscate command handler:", error);
-    await message.reply("An unexpected error occurred. Please try again later.");
+    
+    // Send critical error message with an embed
+    const criticalErrorEmbed = {
+      color: 0xED4245, // Discord red for errors
+      title: "⚠️ Critical Error",
+      description: "An unexpected error occurred while processing your command. Please try again later.",
+      fields: [
+        {
+          name: "❓ Error Type",
+          value: error instanceof Error ? error.constructor.name : "Unknown Error",
+          inline: true
+        }
+      ],
+      thumbnail: {
+        url: "attachment://logo.png"
+      },
+      footer: {
+        text: "LUA Obfuscator Bot",
+        icon_url: "attachment://logo.png"
+      },
+      timestamp: new Date().toISOString()
+    };
+    
+    await message.reply({
+      embeds: [criticalErrorEmbed],
+      files: [{
+        attachment: 'client/public/logo.png',
+        name: 'logo.png'
+      }]
+    });
     
     // Send notification to owner about critical error
     const errorMsg = error instanceof Error ? error.message : String(error);
