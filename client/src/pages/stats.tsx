@@ -54,6 +54,10 @@ export default function Stats() {
   const { data: statsData, isLoading, isError, refetch } = useQuery<ApiResponse>({
     queryKey: ['/api/stats'],
     refetchInterval: 60000, // Auto refresh every minute
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/stats');
+      return res.json();
+    }
   });
 
   const handleRefresh = () => {
@@ -63,42 +67,43 @@ export default function Stats() {
   // Colors for the charts
   const COLORS = ['#3b82f6', '#1d4ed8', '#60a5fa', '#93c5fd'];
   
-  // Default demo stats data (will be replaced by actual data from API)
-  const demoStats: StatsData = {
-    totalObfuscations: 12547,
-    todayObfuscations: 423,
-    uniqueUsers: 1824,
-    averageFileSize: 28.4, // KB
+  // Loading state while data is being fetched
+  // Fallback stats for loading/error state
+  const emptyStats: StatsData = {
+    totalObfuscations: 0,
+    todayObfuscations: 0,
+    uniqueUsers: 0,
+    averageFileSize: 0,
     processingTime: {
-      light: 0.8, // seconds
-      medium: 1.4,
-      heavy: 2.2
+      light: 0,
+      medium: 0,
+      heavy: 0
     },
     protectionLevels: [
-      { name: 'Light', value: 2341, color: '#60a5fa' },
-      { name: 'Medium', value: 7890, color: '#3b82f6' },
-      { name: 'Heavy', value: 2316, color: '#1d4ed8' }
+      { name: 'Light', value: 0, color: '#60a5fa' },
+      { name: 'Medium', value: 0, color: '#3b82f6' },
+      { name: 'Heavy', value: 0, color: '#1d4ed8' }
     ],
     dailyStats: [
-      { day: 'Mon', obfuscations: 346 },
-      { day: 'Tue', obfuscations: 412 },
-      { day: 'Wed', obfuscations: 387 },
-      { day: 'Thu', obfuscations: 423 },
-      { day: 'Fri', obfuscations: 518 },
-      { day: 'Sat', obfuscations: 294 },
-      { day: 'Sun', obfuscations: 279 }
+      { day: 'Mon', obfuscations: 0 },
+      { day: 'Tue', obfuscations: 0 },
+      { day: 'Wed', obfuscations: 0 },
+      { day: 'Thu', obfuscations: 0 },
+      { day: 'Fri', obfuscations: 0 },
+      { day: 'Sat', obfuscations: 0 },
+      { day: 'Sun', obfuscations: 0 }
     ],
     popularFileTypes: [
-      { name: 'FiveM Scripts', value: 48 },
-      { name: 'Game Scripts', value: 32 },
-      { name: 'UI/Frontend', value: 12 },
-      { name: 'Other', value: 8 }
+      { name: 'FiveM Scripts', value: 0 },
+      { name: 'Game Scripts', value: 0 },
+      { name: 'UI/Frontend', value: 0 },
+      { name: 'Other', value: 0 }
     ],
-    lastUpdated: new Date().toLocaleString()
+    lastUpdated: isLoading ? 'Loading...' : isError ? 'Failed to load' : 'Unknown'
   };
-
-  // Use actual data if available, otherwise use demo data
-  const stats = statsData?.data || demoStats;
+  
+  // Use actual data if available, otherwise use empty stats
+  const stats = statsData?.data || emptyStats;
 
   const formatNumber = (num: number) => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
