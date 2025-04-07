@@ -2,12 +2,19 @@ import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Define obfuscation levels
+export const ObfuscationLevel = {
+  Light: "light",     // Basic obfuscation (comments removal, minification)
+  Medium: "medium",   // Default level (variable renaming + light)
+  Heavy: "heavy",     // Advanced obfuscation (string encryption + medium)
+} as const;
+
 // User table schema for Discord users
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  discordId: text("discord_id").unique(),
+  discordId: text("discord_id"),
 });
 
 // Obfuscation logs to track usage
@@ -18,6 +25,8 @@ export const obfuscationLogs = pgTable("obfuscation_logs", {
   fileSize: integer("file_size").notNull(),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
   success: boolean("success").notNull(),
+  level: text("level").notNull().default(ObfuscationLevel.Medium), // Protection level used
+  processingTime: integer("processing_time").default(0), // Time it took to process in ms
 });
 
 // Insert schemas
@@ -32,6 +41,8 @@ export const insertObfuscationLogSchema = createInsertSchema(obfuscationLogs).pi
   fileName: true,
   fileSize: true,
   success: true,
+  level: true,
+  processingTime: true,
 });
 
 // Types
@@ -40,13 +51,6 @@ export type User = typeof users.$inferSelect;
 
 export type InsertObfuscationLog = z.infer<typeof insertObfuscationLogSchema>;
 export type ObfuscationLog = typeof obfuscationLogs.$inferSelect;
-
-// Define obfuscation levels
-export const ObfuscationLevel = {
-  Light: "light",     // Basic obfuscation (comments removal, minification)
-  Medium: "medium",   // Default level (variable renaming + light)
-  Heavy: "heavy",     // Advanced obfuscation (string encryption + medium)
-} as const;
 
 // Validation schema for obfuscation level
 export const obfuscationLevelSchema = z.enum([

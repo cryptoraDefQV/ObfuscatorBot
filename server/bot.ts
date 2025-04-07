@@ -11,7 +11,8 @@ import {
   MessageActionRowComponentBuilder,
   Interaction,
   EmbedBuilder,
-  GuildMember
+  GuildMember,
+  TextChannel
 } from "discord.js";
 import { obfuscateLua } from "./obfuscator";
 import { IStorage } from "./storage";
@@ -109,8 +110,9 @@ export async function sendUpdateToChannel(title: string, message: string, imageU
         embed.setThumbnail("attachment://logo.png");
       }
       
-      // Send the embed with attached logo
-      await channel.send({
+      // Send the embed with attached logo - ensure we use TextChannel for sending
+      const textChannel = channel as TextChannel;
+      await textChannel.send({
         embeds: [embed],
         files: [{
           attachment: 'client/public/logo.png',
@@ -173,6 +175,12 @@ export function startBot(storage: IStorage) {
     try {
       const uptime = new Date().toLocaleString();
       await sendOwnerNotification(`Bot is now online! (${uptime})\nLogged in as: ${readyClient.user.tag}`);
+      
+      // Send update to the updates channel
+      await sendUpdateToChannel(
+        "Bot Status Update",
+        `🟢 **OBFUSCORE is now online!**\n\nBot started at: ${uptime}\nTag: ${readyClient.user.tag}\n\nReady to obfuscate Lua code. Type \`${COMMAND_PREFIX}${HELP_COMMAND}\` in any channel to get started.`
+      );
     } catch (error) {
       console.error("Failed to send startup notification:", error);
     }
@@ -517,8 +525,15 @@ async function handleObfuscateCommand(message: Message, args: string[], storage:
       
       const luaCode = await response.text();
       
+      // Measure processing time
+      const startTime = Date.now();
+      
       // Obfuscate the code with the specified level
       const obfuscatedCode = obfuscateLua(luaCode, obfuscationLevel);
+      
+      // Calculate processing time in milliseconds
+      const processingTime = Date.now() - startTime;
+      console.log(`Obfuscation took ${processingTime}ms at ${obfuscationLevel} level`);
       
       // Send the obfuscated code to the user via DM
       console.log("Attempting to send DM to user:", message.author.tag);
@@ -672,12 +687,14 @@ async function handleObfuscateCommand(message: Message, args: string[], storage:
         });
       }
       
-      // Log the successful obfuscation
+      // Log the successful obfuscation with level information and processing time
       await storage.createObfuscationLog({
         userId: message.author.id,
         fileName,
         fileSize: attachment.size,
-        success: true
+        success: true,
+        level: obfuscationLevel,
+        processingTime: processingTime
       });
       
     } catch (error) {
@@ -718,12 +735,14 @@ async function handleObfuscateCommand(message: Message, args: string[], storage:
         }]
       });
       
-      // Log the failed obfuscation
+      // Log the failed obfuscation with level information
       await storage.createObfuscationLog({
         userId: message.author.id,
         fileName,
         fileSize: attachment.size,
-        success: false
+        success: false,
+        level: obfuscationLevel,
+        processingTime: 0 // Failed so no processing time
       });
       
       // Send notification to owner about the error
@@ -782,50 +801,18 @@ async function handleObfuscateCommand(message: Message, args: string[], storage:
 // Stats command handler to show service usage statistics
 async function handleStatsCommand(message: Message, storage: IStorage) {
   try {
-    // Fetch stats data from storage
-    const logs = await storage.getUserObfuscationLogs("");
-    
-    // Calculate key metrics
-    const totalObfuscations = logs.length;
-    
-    // Calculate today's obfuscations
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayObfuscations = logs.filter(log => 
-      new Date(log.timestamp).getTime() >= today.getTime()
-    ).length;
-    
-    // Calculate unique users
-    const uniqueUsers = new Set(logs.map(log => log.userId)).size;
+    // Fetch stats data from storage using our new methods
+    const totalObfuscations = await storage.getTotalObfuscations();
+    const todayObfuscations = await storage.getTodayObfuscations();
+    const uniqueUsers = await storage.getUniqueUsers();
+    const protectionLevels = await storage.getProtectionLevelStats();
+    const dailyStats = await storage.getDailyStats(7);
+    const processingTimes = await storage.getProcessingTimeStats();
     
     // Calculate protection level usage
-    const lightProtection = Math.floor(totalObfuscations * 0.19); // 19%
-    const heavyProtection = Math.floor(totalObfuscations * 0.18); // 18%
-    const mediumProtection = totalObfuscations - lightProtection - heavyProtection; // ~63%
-    
-    // Calculate daily stats (for the last 7 days)
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const dailyStats = [];
-    
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      date.setHours(0, 0, 0, 0);
-      
-      const nextDate = new Date(date);
-      nextDate.setDate(nextDate.getDate() + 1);
-      
-      // Count obfuscations for this day
-      const dayObfuscations = logs.filter(log => {
-        const logDate = new Date(log.timestamp);
-        return logDate >= date && logDate < nextDate;
-      }).length;
-      
-      dailyStats.push({
-        day: days[date.getDay()],
-        obfuscations: dayObfuscations || Math.floor(Math.random() * 300 + 200) // Fallback to demo data
-      });
-    }
+    const lightProtection = protectionLevels.light || 0;
+    const mediumProtection = protectionLevels.medium || 0;
+    const heavyProtection = protectionLevels.heavy || 0;
     
     // Create the stats embed
     const statsEmbed = {
@@ -854,7 +841,7 @@ async function handleStatsCommand(message: Message, storage: IStorage) {
         {
           name: "💻 Processing Performance",
           value: 
-            "**Light:** 0.8s | **Medium:** 1.4s | **Heavy:** 2.2s\n" +
+            `**Light:** ${(processingTimes.light / 1000).toFixed(1)}s | **Medium:** ${(processingTimes.medium / 1000).toFixed(1)}s | **Heavy:** ${(processingTimes.heavy / 1000).toFixed(1)}s\n` +
             "Average processing time by protection level"
         }
       ],
