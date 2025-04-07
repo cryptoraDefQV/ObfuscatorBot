@@ -30,6 +30,7 @@ const WELCOME_COMMAND = "welcome";
 // IDs for verification - customize these for specific servers
 const VERIFICATION_ROLE_ID = "1358919575567335504"; // Role ID to assign upon verification
 const WELCOME_CHANNEL_ID = "1354509096316833916"; // Channel ID for welcome messages
+const UPDATES_CHANNEL_ID = "1358921983110414338"; // Channel ID for update notifications
 
 // Owner information for system notifications
 const OWNER_ID = "1294068543859724451"; // iliasyuki's user ID
@@ -79,6 +80,56 @@ export async function sendOwnerNotification(message: string, isError = false) {
   }
 }
 
+// Function to send updates to the designated updates channel
+export async function sendUpdateToChannel(title: string, message: string, imageUrl?: string) {
+  try {
+    if (!discordClient || !discordClient.isReady()) {
+      console.error("Cannot send update: Discord client not ready");
+      return;
+    }
+    
+    // Find the updates channel
+    const channel = await discordClient.channels.fetch(UPDATES_CHANNEL_ID);
+    if (channel && channel.isTextBased()) {
+      // Create a stylish embed for the update
+      const embed = new EmbedBuilder()
+        .setColor(0x3B82F6) // Blue color for updates
+        .setTitle(`📢 ${title}`)
+        .setDescription(message)
+        .setTimestamp()
+        .setFooter({
+          text: "OBFUSCORE Bot Updates",
+          iconURL: "attachment://logo.png"
+        });
+      
+      // Add image if provided
+      if (imageUrl) {
+        embed.setImage(imageUrl);
+      } else {
+        embed.setThumbnail("attachment://logo.png");
+      }
+      
+      // Send the embed with attached logo
+      await channel.send({
+        embeds: [embed],
+        files: [{
+          attachment: 'client/public/logo.png',
+          name: 'logo.png'
+        }]
+      });
+      
+      console.log(`Update sent to channel ${UPDATES_CHANNEL_ID}: ${title}`);
+      return true;
+    } else {
+      console.error(`Updates channel ${UPDATES_CHANNEL_ID} not found or not a text channel`);
+      return false;
+    }
+  } catch (error) {
+    console.error(`Failed to send update to channel: ${error}`);
+    return false;
+  }
+}
+
 export function startBot(storage: IStorage) {
   const token = process.env.DISCORD_BOT_TOKEN;
   
@@ -87,9 +138,9 @@ export function startBot(storage: IStorage) {
     return;
   }
 
-  // Create Discord client with basic intents to avoid "disallowed intents" error
-  // For full functionality, you need to enable Message Content Intent in the Discord Developer Portal
-  console.log("Attempting to create Discord client with minimal intents");
+  // Create Discord client with required intents for all functionality
+  // For full functionality, you need to enable Message Content Intent and Server Members Intent in the Discord Developer Portal
+  console.log("Attempting to create Discord client with required intents");
   
   const client = new Client({
     intents: [
@@ -188,6 +239,28 @@ export function startBot(storage: IStorage) {
       await handleVerification(interaction);
     }
   });
+  
+  // Auto-welcome new members when they join
+  client.on(Events.GuildMemberAdd, async (member) => {
+    try {
+      console.log(`New member joined: ${member.user.tag}`);
+      
+      // Find the welcome channel
+      const welcomeChannel = member.guild.channels.cache.find(channel => 
+        channel.id === WELCOME_CHANNEL_ID || 
+        (channel.type === ChannelType.GuildText && 
+         channel.name.toLowerCase().includes('welcome'))
+      );
+      
+      if (welcomeChannel && welcomeChannel.type === ChannelType.GuildText) {
+        await sendWelcomeMessage(welcomeChannel, member);
+      } else {
+        console.log(`No welcome channel found in guild ${member.guild.name}`);
+      }
+    } catch (error) {
+      console.error("Error handling new member join:", error);
+    }
+  });
 
   // Log in to Discord
   client.login(token).catch((error) => {
@@ -195,14 +268,15 @@ export function startBot(storage: IStorage) {
     
     if (error.toString().includes("disallowed intents")) {
       console.warn("\n------------------------------------------------------");
-      console.warn("IMPORTANT: MESSAGE CONTENT INTENT IS NOT ENABLED");
-      console.warn("To enable the bot to read messages, you need to:");
+      console.warn("IMPORTANT: PRIVILEGED INTENTS ARE NOT ENABLED");
+      console.warn("To enable the bot to function properly, you need to:");
       console.warn("1. Go to Discord Developer Portal: https://discord.com/developers/applications");
       console.warn("2. Select your application");
       console.warn("3. Go to 'Bot' tab");
       console.warn("4. Under 'Privileged Gateway Intents'");
       console.warn("5. Enable 'MESSAGE CONTENT INTENT'");
-      console.warn("6. Save changes and restart the bot");
+      console.warn("6. Enable 'SERVER MEMBERS INTENT'");
+      console.warn("7. Save changes and restart the bot");
       console.warn("------------------------------------------------------\n");
     }
   });
@@ -234,12 +308,6 @@ async function handleHelpCommand(message: Message) {
           `\`${COMMAND_PREFIX}${OBFUSCATE_COMMAND} [level]\` - Obfuscate an attached Lua file\n` +
           `\`${COMMAND_PREFIX}${STATS_COMMAND}\` - Display service usage statistics\n` +
           `\`${COMMAND_PREFIX}${HELP_COMMAND}\` - Show this help message`
-      },
-      {
-        name: "⚙️ Admin Commands",
-        value: 
-          `\`${COMMAND_PREFIX}${SETUP_VERIFY_COMMAND}\` - Set up a verification message with button\n` +
-          `\`${COMMAND_PREFIX}${WELCOME_COMMAND} @user\` - Send a welcome message to a user`
       },
       {
         name: "🔒 Obfuscation Levels",
